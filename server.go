@@ -118,7 +118,7 @@ func (server *Server) readRequest(cc codec.Codec) (*request, error) {
 	return req, nil
 }
 
-func (server *Server) sendResponse(cc codec.Codec, H *codec.Header, body interface{}, sending *sync.Mutex) {
+func (server *Server) sendResponse(cc codec.Codec, h *codec.Header, body interface{}, sending *sync.Mutex) {
 	sending.Lock()
 	defer sending.Unlock()
 	if err := cc.Write(h, body); err != nil {
@@ -130,5 +130,5 @@ func (server *Server) handleRequest(cc codec.Codec, req *request, sending *sync.
 	defer wg.Done()
 	log.Println(req.h, req.argv.Elem())
 	req.replyv = reflect.ValueOf(fmt.Sprintf("geerpc resp %d", req.h.Seq))
-	server.sendResponse(cc, req.h, req, replyv.Interface(), sending)
+	server.sendResponse(cc, req.h, req.replyv.Interface(), sending)
 }

@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"geerpc"
 	"geerpc/codec"
 	"log"
@@ -29,7 +30,7 @@ func main() {
 
 	time.Sleep(time.Second)
 
-	_ = json.NewDecoder(conn).Encode(geerpc.DefaultOption)
+	_ = json.NewEncoder(conn).Encode(geerpc.DefaultOption)
 	cc := codec.NewGobCodec(conn)
 
 	for i := 0; i < 5; i++ {
@@ -37,5 +38,8 @@ func main() {
 			ServiceMethod: "Foo.Sum",
 			Seq:           uint64(i),
 		}
+		_ = cc.Write(h, fmt.Sprintf("geerpc req %d", h.Seq))
+		_ = cc.ReadHeader(h)
+
 	}
 }
