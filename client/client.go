@@ -142,3 +142,51 @@ func newClientCodec(cc codec.Codec, opt *server.Option) *Client {
 	go client.receive()
 	return client
 }
+
+func parseOptions(opts ...*server.Option) (*server.Option, error) {
+	if len(opts) == 0 || opts[0] == nil {
+		return server.DefaultOption, nil
+	}
+	if len(opts) != 1 {
+		return nil, errors.New("number of options is more than 1")
+	}
+	opt := opts[0]
+	opt.MagicNumber = server.DefaultOption.MagicNumber
+	if opt.CodecType == "" {
+		opt.CodecType = server.DefaultOption.CodecType
+	}
+	return opt, nil
+}
+
+func Dial(network, address string, opts ...*server.Option) (client *Client, err error) {
+	opt, err := parseOptions(opts...)
+	if err != nil {
+		return nil, err
+	}
+	conn, err := net.Dial(network, address)
+	if err != nil {
+		return nil, err
+	}
+	defer func() {
+		if client == nil {
+			_ = conn.Close()
+		}
+	}()
+	return NewClient(conn, opt)
+}
+
+func (client *Client) send(call *Call) {
+	client.sending.Lock()
+	defer client.sending.Unlock()
+
+	seq, err := client.registerCall(call)
+
+	if err != nil {
+		call.Error = err
+		call.done()
+		return
+	}
+
+	client.header.ServiceMethod = call.ServiceMethod
+	client.header.Seq = seq
+}
