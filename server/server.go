@@ -1,4 +1,4 @@
-package geerpc
+package server
 
 import (
 	"encoding/json"
