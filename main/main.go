@@ -2,8 +2,7 @@ package main
 
 import (
 	"fmt"
-	"geerpc/client"
-	"geerpc/service"
+	"geerpc"
 	"log"
 	"net"
 	"sync"
@@ -17,14 +16,14 @@ func startServer(addr chan string) {
 	}
 	log.Println("start rpc service on", l.Addr())
 	addr <- l.Addr().String()
-	service.Accept(l)
+	GeeRPC.Accept(l)
 }
 
 func main() {
 	log.SetFlags(0)
 	addr := make(chan string)
 	go startServer(addr)
-	client, _ := client.Dial("tcp", <-addr)
+	client, _ := GeeRPC.Dial("tcp", <-addr)
 
 	defer func() { _ = client.Close() }()
 
