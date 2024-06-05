@@ -5,18 +5,21 @@ import (
 	"geerpc"
 	"log"
 	"net"
+	"net/http"
 	"sync"
 	"time"
 )
 
+type Foo int
+
 func startServer(addr chan string) {
-	l, err := net.Listen("tcp", ":0")
-	if err != nil {
-		log.Fatal("network error:", err)
-	}
-	log.Println("start rpc service on", l.Addr())
+	var foo Foo
+	l, _ := net.Listen("tcp", ":9999")
+	_ = GeeRPC.Register(&foo)
+	GeeRPC.HandleHTTP()
+
 	addr <- l.Addr().String()
-	GeeRPC.Accept(l)
+	_ = http.Serve(l, nil)
 }
 
 func main() {

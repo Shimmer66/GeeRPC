@@ -12,6 +12,7 @@ import (
 	"io"
 	"log"
 	"net"
+	"net/http"
 	"reflect"
 	"strings"
 	"sync"
@@ -19,6 +20,12 @@ import (
 )
 
 const MagicNumber = 0x3bef5c
+
+const (
+	connected        = "200 Connected to Gee RPC"
+	defaultRPCPath   = "/_geerpc"
+	defaultDebugPath = "/debug/geerpc"
+)
 
 type Option struct {
 	MagicNumber    int           // MagicNumber marks this's a geerpc request
@@ -45,6 +52,32 @@ func NewServer() *Server {
 
 // DefaultServer is the default instance of *Server.
 var DefaultServer = NewServer()
+
+func (server *Server) ServeHTTP(w http.ResponseWriter, req *http.Request) {
+	if req.Method != "CONNECT" {
+		w.Header().Set("Content-Type", "text/plain;charset=utf-8")
+		w.WriteHeader(http.StatusMethodNotAllowed)
+		_, _ = io.WriteString(w, "405 must CONNECT\n")
+		return
+	}
+	conn, _, err := w.(http.Hijacker).Hijack()
+	if err != nil {
+		log.Println("rpc hijacjing ", req.RemoteAddr, ": ", err.Error())
+		return
+	}
+	_, _ = io.WriteString(conn, "HTTP/1.0"+connected+"\n\n")
+	server.ServeConn(conn)
+}
+
+func (server *Server) HandleHTTP() {
+	http.Handle(defaultRPCPath, server)
+	http.Handle(defaultDebugPath, debugHTTP{server})
+	log.Println("rpc server debug path: ", defaultDebugPath)
+}
+
+func HandleHTTP() {
+	DefaultServer.HandleHTTP()
+}
 
 // ServeConn runs the server on a single connection.
 // ServeConn blocks, serving the connection until the client hangs up.
@@ -87,7 +120,7 @@ func (server *Server) serveCodec(cc codec.Codec, opt *Option) {
 		go server.handleRequest(cc, req, sending, wg, opt.HandleTimeout)
 	}
 	wg.Wait()
-	_ = cc.Close()
+	_ = cc.Close() //________________________________________________________________________
 }
 
 // request stores all information of a call
