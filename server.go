@@ -21,12 +21,6 @@ import (
 
 const MagicNumber = 0x3bef5c
 
-const (
-	connected        = "200 Connected to Gee RPC"
-	defaultRPCPath   = "/_geerpc"
-	defaultDebugPath = "/debug/geerpc"
-)
-
 type Option struct {
 	MagicNumber    int           // MagicNumber marks this's a geerpc request
 	CodecType      codec.Type    // client may choose different Codec to encode body
@@ -52,32 +46,6 @@ func NewServer() *Server {
 
 // DefaultServer is the default instance of *Server.
 var DefaultServer = NewServer()
-
-func (server *Server) ServeHTTP(w http.ResponseWriter, req *http.Request) {
-	if req.Method != "CONNECT" {
-		w.Header().Set("Content-Type", "text/plain;charset=utf-8")
-		w.WriteHeader(http.StatusMethodNotAllowed)
-		_, _ = io.WriteString(w, "405 must CONNECT\n")
-		return
-	}
-	conn, _, err := w.(http.Hijacker).Hijack()
-	if err != nil {
-		log.Println("rpc hijacjing ", req.RemoteAddr, ": ", err.Error())
-		return
-	}
-	_, _ = io.WriteString(conn, "HTTP/1.0"+connected+"\n\n")
-	server.ServeConn(conn)
-}
-
-func (server *Server) HandleHTTP() {
-	http.Handle(defaultRPCPath, server)
-	http.Handle(defaultDebugPath, debugHTTP{server})
-	log.Println("rpc server debug path: ", defaultDebugPath)
-}
-
-func HandleHTTP() {
-	DefaultServer.HandleHTTP()
-}
 
 // ServeConn runs the server on a single connection.
 // ServeConn blocks, serving the connection until the client hangs up.
@@ -120,7 +88,7 @@ func (server *Server) serveCodec(cc codec.Codec, opt *Option) {
 		go server.handleRequest(cc, req, sending, wg, opt.HandleTimeout)
 	}
 	wg.Wait()
-	_ = cc.Close() //________________________________________________________________________
+	_ = cc.Close()
 }
 
 // request stores all information of a call
@@ -259,3 +227,40 @@ func (server *Server) Register(rcvr interface{}) error {
 
 // Register publishes the receiver's methods in the DefaultServer.
 func Register(rcvr interface{}) error { return DefaultServer.Register(rcvr) }
+
+const (
+	connected        = "200 Connected to Gee RPC"
+	defaultRPCPath   = "/_geeprc_"
+	defaultDebugPath = "/debug/geerpc"
+)
+
+// ServeHTTP implements an http.Handler that answers RPC requests.
+func (server *Server) ServeHTTP(w http.ResponseWriter, req *http.Request) {
+	if req.Method != "CONNECT" {
+		w.Header().Set("Content-Type", "text/plain; charset=utf-8")
+		w.WriteHeader(http.StatusMethodNotAllowed)
+		_, _ = io.WriteString(w, "405 must CONNECT\n")
+		return
+	}
+	conn, _, err := w.(http.Hijacker).Hijack()
+	if err != nil {
+		log.Print("rpc hijacking ", req.RemoteAddr, ": ", err.Error())
+		return
+	}
+	_, _ = io.WriteString(conn, "HTTP/1.0 "+connected+"\n\n")
+	server.ServeConn(conn)
+}
+
+// HandleHTTP registers an HTTP handler for RPC messages on rpcPath,
+// and a debugging handler on debugPath.
+// It is still necessary to invoke http.Serve(), typically in a go statement.
+func (server *Server) HandleHTTP() {
+	http.Handle(defaultRPCPath, server)
+	http.Handle(defaultDebugPath, debugHTTP{server})
+	log.Println("rpc server debug path:", defaultDebugPath)
+}
+
+// HandleHTTP is a convenient approach for default server to register HTTP handlers
+func HandleHTTP() {
+	DefaultServer.HandleHTTP()
+}
