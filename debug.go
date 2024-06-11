@@ -1,4 +1,4 @@
-package GeeRPC
+package geerpc
 
 import (
 	"fmt"
@@ -8,7 +8,7 @@ import (
 
 const debugText = `<html>
 	<body>
-	<title>GeeRPC Services</title>
+	<title>geerpc Services</title>
 	{{range .}}
 	<hr>
 	Service {{.Name}}

@@ -2,7 +2,7 @@ package main
 
 import (
 	"context"
-	GeeRPC "geerpc"
+	. "geerpc"
 	"geerpc/registry"
 	"geerpc/xclient"
 	"log"
@@ -85,7 +85,7 @@ func startRegistry(wg *sync.WaitGroup) {
 func startServer(registryAddr string, wg *sync.WaitGroup) {
 	var foo Foo
 	l, _ := net.Listen("tcp", ":0")
-	server := GeeRPC.NewServer()
+	server := NewServer()
 	_ = server.Register(&foo)
 	registry.Heartbeat(registryAddr, "tcp@"+l.Addr().String(), 0)
 	wg.Done()

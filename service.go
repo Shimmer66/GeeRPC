@@ -1,4 +1,4 @@
-package GeeRPC
+package geerpc
 
 import (
 	"go/ast"

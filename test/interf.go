@@ -2,7 +2,7 @@ package main
 
 import (
 	"fmt"
-	"reflect"
+	"time"
 )
 
 type Student struct {
@@ -40,9 +40,12 @@ func (*Snake) heartbeat() error {
 //	stu.run("12")
 //
 //}
+func printDuration(seconds int) {
+	duration := time.Duration(seconds) * time.Second
+	fmt.Print(duration)
+}
 
 func main() {
-	i := new(int)
-	var animal IslandAnimal = new(Snake)
-	fmt.Println(reflect.TypeOf(animal), reflect.TypeOf(i))
+	seconds := 10
+	printDuration(seconds)
 }
