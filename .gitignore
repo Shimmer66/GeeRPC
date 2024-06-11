@@ -1,0 +1,11 @@
+/bin/
+# Default ignored files
+/shelf/
+/workspace.xml
+/test/
+# Editor-based HTTP Client requests
+/httpRequests/
+# Datasource local storage ignored files
+/dataSources/
+/dataSources.local.xml
+/.idea/
